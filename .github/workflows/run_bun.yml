@@ -28,3 +28,4 @@ jobs:
         run: bun run main.ts
         env:
           EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
+          EMAIL_NAME: ${{ vars.EMAIL_NAME }}
