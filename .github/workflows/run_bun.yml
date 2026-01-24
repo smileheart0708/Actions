@@ -26,3 +26,5 @@ jobs:
 
       - name: Run main.ts
         run: bun run main.ts
+        env:
+          EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
