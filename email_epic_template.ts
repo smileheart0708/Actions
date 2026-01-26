@@ -1,5 +1,7 @@
 // email_template.ts
 
+import { translate } from './tools/translate';
+
 // 1. 定义接口，对应你提供的 API data 结构
 export interface EpicGameItem {
   id: string;
@@ -11,6 +13,10 @@ export interface EpicGameItem {
   free_end: string;
   free_start: string;
   link: string;
+}
+
+interface GameWithTranslation extends EpicGameItem {
+  descriptionZh: string;
 }
 
 // 2. 样式常量配置（方便后期微调）
@@ -27,9 +33,9 @@ const THEME = {
 };
 
 // 3. 辅助函数：生成单个游戏卡片的 HTML
-const renderGameCard = (game: EpicGameItem) => {
+const renderGameCard = (game: GameWithTranslation) => {
   // 判断状态文案和颜色
-  const statusText = game.is_free_now ? 'AVAILABLE NOW' : 'COMING SOON';
+  const statusText = game.is_free_now ? '立即领取' : '即将开始';
   const statusColor = game.is_free_now ? THEME.badgeFree : THEME.badgeWait;
   const dateInfo = game.is_free_now 
     ? `截止: ${game.free_end.split(' ')[0]}` 
@@ -58,25 +64,27 @@ const renderGameCard = (game: EpicGameItem) => {
               
               <p style="margin: 0 0 16px 0;">
                 <span style="text-decoration: line-through; color: ${THEME.textSub}; font-size: 14px; margin-right: 8px;">${game.original_price_desc}</span>
-                <span style="color: ${THEME.textMain}; font-size: 18px; font-weight: bold;">FREE</span>
+                <span style="color: ${THEME.textMain}; font-size: 18px; font-weight: bold;">免费</span>
               </p>
 
-              <p style="margin: 0 0 24px 0; color: ${THEME.textSub}; font-size: 14px; line-height: 1.6;">${game.description}</p>
+              <p style="margin: 0 0 24px 0; color: ${THEME.textSub}; font-size: 14px; line-height: 1.6;">${game.descriptionZh}</p>
 
-              <table width="100%" border="0" cellspacing="0" cellpadding="0">
-                <tr>
-                  <td>
-                    <a href="${game.link}" target="_blank" style="display: block; width: 100%; text-align: center; background-color: ${THEME.accent}; color: #ffffff; padding: 14px 0; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px; box-shadow: 0 0 15px ${THEME.accent}40;">
-                      立即领取 / GET IT
-                    </a>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="text-align: center; padding-top: 12px;">
-                    <span style="color: ${THEME.textSub}; font-size: 12px;">${dateInfo}</span>
-                  </td>
-                </tr>
-              </table>
+               <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                 <tr>
+                   <td>
+                     ${game.is_free_now ? `
+                     <a href="${game.link}" target="_blank" style="display: block; width: 100%; text-align: center; background-color: ${THEME.accent}; color: #ffffff; padding: 14px 0; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px; box-shadow: 0 0 15px ${THEME.accent}40;">
+                       立即领取
+                     </a>
+                     ` : ''}
+                   </td>
+                 </tr>
+                 <tr>
+                   <td style="text-align: center; padding-top: 12px;">
+                     <span style="color: ${THEME.textSub}; font-size: 12px;">${dateInfo}</span>
+                   </td>
+                 </tr>
+               </table>
             </td>
           </tr>
         </table>
@@ -86,8 +94,15 @@ const renderGameCard = (game: EpicGameItem) => {
 };
 
 // 4. 导出主函数
-export const generateEmailHtml = (games: EpicGameItem[]): string => {
-  const gamesHtml = games.map(game => renderGameCard(game)).join('');
+export const generateEmailHtml = async (games: EpicGameItem[]): Promise<string> => {
+  const gamesWithTranslation: GameWithTranslation[] = await Promise.all(
+    games.map(async (game) => {
+      const descriptionZh = await translate(game.description);
+      return { ...game, descriptionZh };
+    })
+  );
+
+  const gamesHtml = gamesWithTranslation.map(game => renderGameCard(game)).join('');
 
   return `
 <!DOCTYPE html>
@@ -95,7 +110,7 @@ export const generateEmailHtml = (games: EpicGameItem[]): string => {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Epic Free Games</title>
+  <title>Epic 免费游戏</title>
 </head>
 <body style="margin: 0; padding: 0; background-color: ${THEME.bg}; -webkit-font-smoothing: antialiased;">
   
@@ -108,7 +123,7 @@ export const generateEmailHtml = (games: EpicGameItem[]): string => {
           <tr>
             <td style="padding-bottom: 30px; text-align: center;">
               <h1 style="margin: 0; color: ${THEME.textMain}; font-family: 'Arial Black', Arial, sans-serif; font-size: 28px; letter-spacing: -1px;">
-                EPIC <span style="color: ${THEME.accent};">GAMES</span> ALERT
+                Epic <span style="color: ${THEME.accent};">游戏</span> 限时免费
               </h1>
               <p style="margin: 8px 0 0 0; color: ${THEME.textSub}; font-size: 14px;">本周喜加一更新 · 自动推送</p>
             </td>
@@ -119,8 +134,7 @@ export const generateEmailHtml = (games: EpicGameItem[]): string => {
           <tr>
             <td style="padding-top: 20px; text-align: center; border-top: 1px solid ${THEME.border};">
               <p style="margin: 0; color: #52525b; font-size: 12px;">
-                Powered by Bun Runtime<br>
-                ${new Date().toLocaleDateString()} Daily Check
+                ${new Date().toLocaleDateString()} 每日检查
               </p>
             </td>
           </tr>

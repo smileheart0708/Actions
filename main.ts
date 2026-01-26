@@ -1,8 +1,9 @@
 import { sendMail } from './post_email';
 import { generateEmailHtml, type EpicGameItem } from './email_epic_template';
 
-const API_BASE_URL = 'https://60s.viki.moe' as const;
-const API_ENDPOINT = '/v2/epic' as const;
+export const API_BASE_URL = 'https://60s.viki.moe' as const;
+export const API_ENDPOINT = '/v2/epic' as const;
+export const TRANSLATE_ENDPOINT = '/v2/fanyi' as const;
 
 const requiredEnvVars = ['EMAIL_NAME', 'EMAIL_PASS'] as const;
 
@@ -45,7 +46,7 @@ async function main() {
     const games = await fetchEpicGames();
     console.log(`[INFO] 获取到 ${games.length} 个游戏`);
 
-    const html = generateEmailHtml(games);
+    const html = await generateEmailHtml(games);
     const emailName = process.env.EMAIL_NAME!;
     const emailPass = process.env.EMAIL_PASS!;
 
