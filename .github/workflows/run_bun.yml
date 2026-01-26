@@ -1,29 +1,27 @@
 name: Daily Auto Run (Bun)
-
 on:
   schedule:
-    # 每天北京时间 00:00 (即 UTC 16:00) 运行
-    - cron: '0 16 * * *'
+    # 避开整点，减少排队延迟 (UTC 16:07 = 北京时间 00:07)
+    - cron: '7 16 * * *'
   push:
     branches: [ "main" ]
-  workflow_dispatch: # 保留手动触发按钮，方便调试
+  workflow_dispatch:
 
 jobs:
   run-main:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
+      
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest # 或者指定版本，如 1.0.0
-
+          bun-version: latest
+      
       - name: Install dependencies
         run: bun install
-
+      
       - name: Run main.ts
         run: bun run main.ts
         env:
