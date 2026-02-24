@@ -3,23 +3,10 @@ on:
   schedule:
     # UTC 16:23 = 北京时间 00:23，每日触发
     - cron: '23 16 * * *'
-    # 临时探针：每 5 分钟触发一次，仅用于验证 schedule 是否恢复
-    - cron: '*/5 * * * *'
   workflow_dispatch:
 
 jobs:
-  schedule-probe:
-    if: ${{ github.event_name == 'schedule' }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Log Schedule Probe
-        run: |
-          echo "event_name=${{ github.event_name }}"
-          echo "schedule=${{ github.event.schedule }}"
-          echo "probe_started_at=$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
-
   run-main:
-    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'schedule' && github.event.schedule == '23 16 * * *') }}
     runs-on: ubuntu-latest
     steps:
       - name: Log Trigger Context
