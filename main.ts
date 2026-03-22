@@ -32,6 +32,24 @@ async function fetchEpicGames(): Promise<EpicGameItem[]> {
   return json.data;
 }
 
+function shouldSendEmail(games: EpicGameItem[]): boolean {
+  const now = Date.now();
+  const TWELVE_HOURS_MS = 12 * 60 * 60 * 1000;
+
+  for (const game of games) {
+    const startTime = new Date(game.free_start).getTime();
+    const timeDiff = Math.abs(now - startTime);
+
+    if (timeDiff <= TWELVE_HOURS_MS) {
+      console.log(`[INFO] 游戏 "${game.title}" 在时间窗口内 (距开始时间 ${Math.round(timeDiff / 1000 / 60)} 分钟)`);
+      return true;
+    }
+  }
+
+  console.log('[INFO] 所有游戏均不在时间窗口内 (开始时间前后12小时)，跳过发送');
+  return false;
+}
+
 async function main() {
   const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
 
@@ -45,6 +63,11 @@ async function main() {
   try {
     const games = await fetchEpicGames();
     console.log(`[INFO] 获取到 ${games.length} 个游戏`);
+
+    if (!shouldSendEmail(games)) {
+      console.log('[OK] 邮件发送已跳过 (不在时间窗口内)');
+      return;
+    }
 
     const html = await generateEmailHtml(games);
     const emailName = process.env.EMAIL_NAME!;
